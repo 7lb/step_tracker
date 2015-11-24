@@ -3,31 +3,25 @@
 
 # pylint: disable = missing-docstring, import-error, redefined-outer-name
 
+import argparse
+import cryptohelper
 from datetime import datetime
+from dbtool import connect_db
 from flask import Flask, jsonify, request, make_response, url_for, g
 from flask.ext.httpauth import HTTPBasicAuth
 import sqlite3
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
-DBNAME = "users.db"
-
-def connect_db():
-    return sqlite3.connect(DBNAME)
-
-def init_db():
-    conn = connect_db()
-    with app.open_resource("/home/zero/esercizi/step_tracker/schema.sql", "r") as fd:
-        conn.cursor().executescript(fd.read())
-    conn.commit()
-    conn.close()
+DBFILE = ""
 
 @app.before_request
 def before_request():
     db = getattr(g, "db", None)
     if db is None:
-        g.db = connect_db()
+        g.db = connect_db(DBFILE)
     return db
+
 
 @app.teardown_request
 def teardown_request(exception):
@@ -35,28 +29,24 @@ def teardown_request(exception):
     if db is not None:
         db.close()
 
-def populate_db():
-    with app.app_context():
-        conn = connect_db()
-        query = "insert into users (username, password) values (?, ?);"
-        userpasses = [
-            ("admin", "admin"),
-            ("foo", "bar"),
-            ("pippo", "pluto")
-        ]
-        for elem in userpasses:
-            conn.execute(query, elem)
-        conn.commit()
 
-@auth.get_password
-def get_password(username):
-    query = """select password from users
-    where username == ?
-    """
-    password = g.db.execute(query, (username,)).fetchone()
-    if password:
-        return password[0]
-    return
+@auth.verify_password
+def verify_password(username, password):
+    user, b64pwd = g.db.execute("""select username, password from users
+            where username == ?""", (username,)).fetchone()
+    if not user or not cryptohelper.check_pwd(password, b64pwd):
+        return False
+    return True
+
+#@auth.get_password
+#def get_password(username):
+#    query = """select password from users
+#    where username == ?
+#    """
+#    password = g.db.execute(query, (username,)).fetchone()
+#    if password:
+#        return password[0]
+#    return
 
 
 @auth.error_handler
@@ -200,7 +190,7 @@ def day_present(day):
     Controlla se il giorno è presente nel database
     """
     query = """select * from users, days
-    where days.username == ? and days.date ==?"""
+    where days.username == ? and days.date == ?"""
     return g.db.execute(query, (auth.username(), day["date"])).fetchone()
 
 
@@ -236,6 +226,8 @@ def get_date(date):
 
 
 if __name__ == "__main__":
-    init_db()
-    populate_db()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dbfile", help="database file name")
+    args = parser.parse_args()
+    DBFILE = args.dbfile
     app.run()
