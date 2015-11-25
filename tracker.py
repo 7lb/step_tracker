@@ -37,8 +37,13 @@ def verify_password(username, password):
     if not username:
         return False
 
-    user, b64pwd = g.db.execute("""select username, password from users
+    resp = g.db.execute("""select username, password from users
             where username == ?""", (username,)).fetchone()
+
+    if not resp:
+        return False
+
+    user, b64pwd = resp
 
     if not user or not cryptohelper.check_pwd(password, b64pwd):
         return False
@@ -51,7 +56,7 @@ def check_user(func):
     def wrapper(*args, **kwargs):
         user = kwargs.get("user")
         if user != auth.username() and user is not None:
-            return
+            return unauthorized()
         return func(*args, **kwargs)
     return wrapper
 
