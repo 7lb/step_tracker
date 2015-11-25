@@ -13,8 +13,8 @@ HASH_ALGO = "sha512"
 SALT_BYTES = 32
 NUM_ROUNDS = 2**18
 
-# Non abbiamo pbkdf2 su python < 2.7.8, quindi lo simuliamo
-def pbkdf2_fake(password, hashname, salt, rounds):
+# Non abbiamo pbkdf2 su python < 2.7.8, quindi la simuliamo
+def multihash(hashname, password, salt, rounds):
     """
     Simula pbkdf2
     """
@@ -46,7 +46,7 @@ def hash_pwd(password, salt=None, hashname=HASH_ALGO, rounds=NUM_ROUNDS):
     """
     if not salt:
         salt = gensalt()
-    return b64encode(salt + pbkdf2_fake(password, hashname, salt, rounds))
+    return b64encode(salt + multihash(hashname, password, salt, rounds))
 
 
 def get_salt(b64str, salt_size=SALT_BYTES):
@@ -63,3 +63,4 @@ def check_pwd(password, b64str, salt_size=SALT_BYTES,
     """
     return hash_pwd(password, get_salt(b64str, salt_size),
             hashname, rounds) == b64str
+
