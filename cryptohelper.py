@@ -22,16 +22,20 @@ def pbkdf2_fake(password, hashname, salt, rounds):
     if not hashfunc:
         raise RuntimeError("Wrong hash function name")
 
-    for _ in xrange(rounds):
-        digest = hashfunc(password + salt).digest()
+    digest = hashfunc(salt + password).digest()
+
+    for _ in xrange(rounds - 1):
+        digest = hashfunc(digest).digest()
 
     return digest
+
 
 def gensalt(salt_size=SALT_BYTES):
     """
     Genera un salt della dimensione specificata
     """
     return urandom(salt_size)
+
 
 def hash_pwd(password, salt=None, hashname=HASH_ALGO, rounds=NUM_ROUNDS):
     """
@@ -44,14 +48,18 @@ def hash_pwd(password, salt=None, hashname=HASH_ALGO, rounds=NUM_ROUNDS):
         salt = gensalt()
     return b64encode(salt + pbkdf2_fake(password, hashname, salt, rounds))
 
+
 def get_salt(b64str, salt_size=SALT_BYTES):
     """
     Ritorna il salt salvato all'interno della stringa in base64
     """
-    return b64decode(b64str)[salt_size:]
+    return b64decode(b64str)[:salt_size]
 
-def check_pwd(password, b64str, salt_size=SALT_BYTES):
+
+def check_pwd(password, b64str, salt_size=SALT_BYTES,
+        hashname=HASH_ALGO, rounds=NUM_ROUNDS):
     """
     Controlla se la password fornita e quella criptata combaciano
     """
-    return hash_pwd(password, get_salt(b64str, salt_size)) == b64str
+    return hash_pwd(password, get_salt(b64str, salt_size),
+            hashname, rounds) == b64str
