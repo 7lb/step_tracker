@@ -21,7 +21,7 @@ class TrackerTester(unittest.TestCase):
             ("leeloo", "multipass"),
         )
         populate_db(DBFILE, map(
-            lambda t: (t[0], hash_pwd(t[1], rounds=1)),
+            lambda t: (t[0], hash_pwd(t[1])),
             cls.users))
 
     def setUp(self):
@@ -62,6 +62,12 @@ class TrackerTester(unittest.TestCase):
                         url.format(auth_user, pwd, target_user),
                         json={"steps":"100"})
                     self.assertEqual(resp.status_code, 401)
+
+    def test_not_found_v1(self):
+        url = "http://{0}:{1}@127.0.0.1:5000/v1/days/1900-01-01".format(
+            self.users[0][0], self.users[0][1])
+        resp = requests.get(url)
+        self.assertEqual(resp.status_code, 404)
 
 
 if __name__ == "__main__":
