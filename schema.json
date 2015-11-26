@@ -1,0 +1,9 @@
+{
+    "type":"object",
+    "properties": {
+        "steps": {
+            "type":"string"
+        }
+    },
+    "required": ["steps"]
+}

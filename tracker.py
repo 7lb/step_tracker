@@ -10,12 +10,14 @@ from dbtool import connect_db
 from flask import Flask, jsonify, request, make_response, url_for, g
 from flask.ext.httpauth import HTTPBasicAuth
 from functools import wraps
+from jsonschema import validate, ValidationError
 import os
 import sqlite3
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
 DBFILE = ""
+JSON_SCHEMA = ""
 
 @app.before_request
 def before_request():
@@ -61,23 +63,41 @@ def check_user(func):
     return wrapper
 
 
+def validate_schema(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with open(JSON_SCHEMA, "r") as fd:
+            schema_dict = fd.read()
+            schema_dict = eval(schema_dict)
+
+        try:
+            validate(request.json, schema_dict)
+        except ValidationError:
+            return bad_req("Non-validating payload")
+        return func(*args, **kwargs)
+    return wrapper
+
+@app.errorhandler(400)
+def bad_req(msg=""):
+    err = "Bad Request"
+    if msg:
+        err = "{0}: {1}".format(err, msg)
+    return make_response(jsonify({"message": err}), 400)
+
 @auth.error_handler
 @app.errorhandler(401)
 def unauthorized():
-    return make_response(
-        jsonify({"message": "Unauthorized access"}), 401)
+    return make_response(jsonify({"message": "Unauthorized access"}), 401)
 
 
 @app.errorhandler(405)
 def method_not_allowed():
-    return make_response(
-        jsonify({"message": "Method not allowed"}), 405)
+    return make_response(jsonify({"message": "Method not allowed"}), 405)
 
 
 @app.errorhandler(500)
 def internal_server_error(exception):
-    return make_response(
-        jsonify({"message": "Internal server error"}), 500)
+    return make_response(jsonify({"message": "Internal server error"}), 500)
 
 
 # Aggiunta di un numero di passi per la giornata in corso
@@ -85,11 +105,8 @@ def internal_server_error(exception):
 @app.route("/v2/users/<user>/days", methods=["POST"])
 @auth.login_required
 @check_user
+@validate_schema
 def add_day(user=None):
-    if not request.json or not "steps" in request.json:
-        return make_response(
-            jsonify({"message": "Bad Request: missing step number"}), 400)
-
     date = datetime.now().isoformat()[:10]
     day = {
         "date": date,
@@ -97,8 +114,7 @@ def add_day(user=None):
     }
 
     if day_present(day):
-        return make_response(
-            jsonify({"message": "Bad Request: item already present"}), 400)
+        return bad_req("item already present")
 
     add(day)
     response = {
@@ -119,11 +135,8 @@ def add_day(user=None):
 @app.route("/v2/users/<user>/days", methods=["PUT"])
 @auth.login_required
 @check_user
+@validate_schema
 def change_day(user=None):
-    if not request.json or not "steps" in request.json:
-        make_response(
-            jsonify({"message": "Bad Request: missing step number"}), 400)
-
     date = datetime.now().isoformat()[:10]
     day = {
         "date": date,
@@ -229,8 +242,12 @@ def get_date(date):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dbfile", help="database file name")
+    parser.add_argument("schema", help="json schema for input validation")
     args = parser.parse_args()
+
     DBFILE = args.dbfile or os.getenv("TRACKER_DB")
     if not DBFILE:
         exit("Please specify a database")
+
+    JSON_SCHEMA = args.schema
     app.run()
