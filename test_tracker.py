@@ -29,26 +29,6 @@ class TrackerTester(unittest.TestCase):
     def setUp(self):
         clear_db(DBFILE)
 
-    def test_post_v1(self):
-        for user, pwd in self.users:
-            resp = requests.post(
-                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
-            self.assertEqual(resp.status_code, 201)
-
-            resp = requests.post(
-                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
-            self.assertEqual(resp.status_code, 400)
-
-    def test_post_v2(self):
-        for user, pwd in self.users:
-            url = self.url_v2.format(user)
-
-            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
-            self.assertEqual(resp.status_code, 201)
-
-            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
-            self.assertEqual(resp.status_code, 400)
-
     def test_bad_auth_v1(self):
         resp = requests.post(
             self.url_v1, json={"steps":"999"}, auth=("nouser", "nopwd"))
@@ -85,6 +65,26 @@ class TrackerTester(unittest.TestCase):
             resp = requests.get(url, auth=(user, pwd))
             self.assertEqual(resp.status_code, 404)
 
+    def test_post_v1(self):
+        for user, pwd in self.users:
+            resp = requests.post(
+                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+
+            resp = requests.post(
+                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 400)
+
+    def test_post_v2(self):
+        for user, pwd in self.users:
+            url = self.url_v2.format(user)
+
+            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+
+            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 400)
+
     def test_get_v1(self):
         for user, pwd in self.users:
             resp = requests.post(
@@ -95,6 +95,70 @@ class TrackerTester(unittest.TestCase):
             resp = requests.get(get_uri, auth=(user, pwd))
             self.assertEqual(resp.status_code, 200)
 
+    def test_get_v2(self):
+        for user, pwd in self.users:
+            url = self.url_v2.format(user)
+            resp = requests.post(
+                url, json={"steps":"77"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+
+            get_uri = resp.json()["uri"]
+            resp = requests.get(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
+
+    def test_put_v1(self):
+        for user, pwd in self.users:
+            resp = requests.post(
+                self.url_v1, json={"steps":"11"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+            self.assertEqual(resp.json()["day"]["steps"], "11")
+
+            resp = requests.put(
+                self.url_v1, json={"steps":"22"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["day"]["steps"], "22")
+
+    def test_put_v2(self):
+        for user, pwd in self.users:
+            url = self.url_v2.format(user)
+            resp = requests.post(
+                url, json={"steps":"11"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+            self.assertEqual(resp.json()["day"]["steps"], "11")
+
+            resp = requests.put(
+                url, json={"steps":"22"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["day"]["steps"], "22")
+
+    def test_delete_v1(self):
+        for user, pwd in self.users:
+            resp = requests.post(
+                self.url_v1, json={"steps":"280"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+            self.assertEqual(resp.json()["day"]["steps"], "280")
+
+            get_uri = resp.json()["uri"]
+            resp = requests.delete(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
+
+            resp = requests.delete(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 404)
+
+    def test_delete_v2(self):
+        for user, pwd in self.users:
+            url = self.url_v2.format(user)
+            resp = requests.post(
+                url, json={"steps":"280"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+            self.assertEqual(resp.json()["day"]["steps"], "280")
+
+            get_uri = resp.json()["uri"]
+            resp = requests.delete(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
+
+            resp = requests.delete(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 404)
 
 if __name__ == "__main__":
     unittest.main()
