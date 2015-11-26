@@ -20,6 +20,8 @@ class TrackerTester(unittest.TestCase):
             ("name", "word"),
             ("leeloo", "multipass"),
         )
+        cls.url_v1 = "http://127.0.0.1:5000/v1/days"
+        cls.url_v2 = "http://127.0.0.1:5000/v2/users/{0}/days"
         populate_db(DBFILE, map(
             lambda t: (t[0], hash_pwd(t[1])),
             cls.users))
@@ -28,46 +30,70 @@ class TrackerTester(unittest.TestCase):
         clear_db(DBFILE)
 
     def test_post_v1(self):
-        for name, pwd in self.users:
-            url = "http://{0}:{1}@127.0.0.1:5000/v1/days".format(name, pwd)
-
-            resp = requests.post(url, json={"steps":"100"})
+        for user, pwd in self.users:
+            resp = requests.post(
+                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
 
-            resp = requests.post(url, json={"steps":"100"})
+            resp = requests.post(
+                self.url_v1, json={"steps":"100"}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 400)
 
     def test_post_v2(self):
-        for name, pwd in self.users:
-            url = "http://{0}:{1}@127.0.0.1:5000/v2/users/{0}/days".format(
-                name, pwd)
+        for user, pwd in self.users:
+            url = self.url_v2.format(user)
 
-            resp = requests.post(url, json={"steps":"100"})
+            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
 
-            resp = requests.post(url, json={"steps":"100"})
+            resp = requests.post(url, json={"steps":"100"}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 400)
 
     def test_bad_auth_v1(self):
-        url = "http://username:password@127.0.0.1:5000/v1/days"
-        resp = requests.post(url, json={"steps":"999"})
+        resp = requests.post(
+            self.url_v1, json={"steps":"999"}, auth=("nouser", "nopwd"))
         self.assertEqual(resp.status_code, 401)
 
     def test_bad_auth_v2(self):
-        url = "http://{0}:{1}@127.0.0.1:5000/v2/users/{2}/days"
+        # Qui si testa se un user cerca di modificare i dati relativi a un
+        # altro utente
         for auth_user, pwd in self.users:
             for target_user, _ in self.users:
                 if auth_user != target_user:
+                    url = self.url_v2.format(target_user)
                     resp = requests.post(
-                        url.format(auth_user, pwd, target_user),
-                        json={"steps":"100"})
+                        url, json={"steps":"100"}, auth=(auth_user, pwd))
                     self.assertEqual(resp.status_code, 401)
 
+        # Qui si testa se un user cerca di modificare i dati relativi a sè
+        # sesso, ma lo user non esiste
+        wrong_user = ("nouser", "nopwd")
+        url_wrong_user = self.url_v2.format(wrong_user[0])
+        resp = requests.post(
+            url_wrong_user, json={"steps":"100"}, auth=wrong_user)
+        self.assertEqual(resp.status_code, 401)
+
     def test_not_found_v1(self):
-        url = "http://{0}:{1}@127.0.0.1:5000/v1/days/1900-01-01".format(
-            self.users[0][0], self.users[0][1])
-        resp = requests.get(url)
-        self.assertEqual(resp.status_code, 404)
+        for user, pwd in self.users:
+            url = self.url_v1 + "/1900-01-01"
+            resp = requests.get(url, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 404)
+
+    def test_not_found_v2(self):
+        for user, pwd in self.users:
+            url = self.url_v2.format(user) + "/1900-01-01"
+            resp = requests.get(url, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 404)
+
+    def test_get_v1(self):
+        for user, pwd in self.users:
+            resp = requests.post(
+                self.url_v1, json={"steps":"1001"}, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 201)
+
+            get_uri = resp.json()["uri"]
+            resp = requests.get(get_uri, auth=(user, pwd))
+            self.assertEqual(resp.status_code, 200)
 
 
 if __name__ == "__main__":
