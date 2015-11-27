@@ -14,6 +14,7 @@ from jsonschema import ValidationError
 import json_schema
 import os
 import sqlite3
+import sys
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
@@ -242,6 +243,5 @@ if __name__ == "__main__":
 
     DBFILE = args.dbfile or os.getenv("TRACKER_DB")
     if not DBFILE:
-        exit("Please specify a database")
-
+        sys.exit("Please specify a database")
     app.run()
