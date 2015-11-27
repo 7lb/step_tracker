@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import jsonschema
+
 SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Payload ricevuto in input da richieste POST e PUT",
@@ -15,3 +17,5 @@ SCHEMA = {
     "additionalProperties": False,
     "required": ["steps"]
 }
+
+VALIDATOR = jsonschema.Draft4Validator(SCHEMA)

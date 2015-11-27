@@ -10,7 +10,7 @@ from dbtool import connect_db
 from flask import Flask, jsonify, request, make_response, url_for, g
 from flask.ext.httpauth import HTTPBasicAuth
 from functools import wraps
-from jsonschema import validate, ValidationError
+from jsonschema import ValidationError
 import json_schema
 import os
 import sqlite3
@@ -67,7 +67,7 @@ def validate_schema(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            validate(request.json, json_schema.SCHEMA)
+            json_schema.VALIDATOR.validate(request.json)
         except ValidationError:
             return bad_req("Non-validating payload")
         return func(*args, **kwargs)
