@@ -30,7 +30,7 @@ class TrackerTester(unittest.TestCase):
                                           cls.users)
         populate_db(DBFILE, users_with_hashed_passwords)
 
-    def setUp(self):
+    def tearDown(self):
         clear_db(DBFILE)
 
     def test_bad_auth(self):
