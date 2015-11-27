@@ -1,9 +1,14 @@
 {
-    "type":"object",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Payload ricevuto in input da richieste POST e PUT",
+    "type": "object",
     "properties": {
         "steps": {
-            "type":"string"
+            "description": "Numero di passi effettuati in un giorno",
+            "type": "integer",
+            "minimum": 0
         }
     },
+    "additionalProperties": false,
     "required": ["steps"]
 }
