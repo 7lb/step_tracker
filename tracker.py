@@ -11,13 +11,13 @@ from flask import Flask, jsonify, request, make_response, url_for, g
 from flask.ext.httpauth import HTTPBasicAuth
 from functools import wraps
 from jsonschema import validate, ValidationError
+import json_schema
 import os
 import sqlite3
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
 DBFILE = ""
-JSON_SCHEMA = ""
 
 @app.before_request
 def before_request():
@@ -66,12 +66,8 @@ def check_user(func):
 def validate_schema(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        with open(JSON_SCHEMA, "r") as fd:
-            schema_dict = fd.read()
-            schema_dict = eval(schema_dict)
-
         try:
-            validate(request.json, schema_dict)
+            validate(request.json, json_schema.SCHEMA)
         except ValidationError:
             return bad_req("Non-validating payload")
         return func(*args, **kwargs)
@@ -242,12 +238,10 @@ def get_date(date):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dbfile", help="database file name")
-    parser.add_argument("schema", help="json schema for input validation")
     args = parser.parse_args()
 
     DBFILE = args.dbfile or os.getenv("TRACKER_DB")
     if not DBFILE:
         exit("Please specify a database")
 
-    JSON_SCHEMA = args.schema
     app.run()

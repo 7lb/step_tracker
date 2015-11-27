@@ -1,4 +1,7 @@
-{
+#! /usr/bin/env python
+#-*- coding: utf-8 -*-
+
+SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Payload ricevuto in input da richieste POST e PUT",
     "type": "object",
@@ -9,6 +12,6 @@
             "minimum": 0
         }
     },
-    "additionalProperties": false,
+    "additionalProperties": False,
     "required": ["steps"]
 }
