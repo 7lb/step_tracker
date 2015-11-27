@@ -47,17 +47,17 @@ class TrackerTester(unittest.TestCase):
     def test_post(self):
         for user, pwd in self.users:
             resp = requests.post(
-                self.url, json={"steps":"100"}, auth=(user, pwd))
+                self.url, json={"steps":100}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
 
             resp = requests.post(
-                self.url, json={"steps":"100"}, auth=(user, pwd))
+                self.url, json={"steps":100}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 400)
 
     def test_get(self):
         for user, pwd in self.users:
             resp = requests.post(
-                self.url, json={"steps":"1001"}, auth=(user, pwd))
+                self.url, json={"steps":1001}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
 
             get_uri = resp.json()["uri"]
@@ -67,21 +67,21 @@ class TrackerTester(unittest.TestCase):
     def test_put(self):
         for user, pwd in self.users:
             resp = requests.post(
-                self.url, json={"steps":"11"}, auth=(user, pwd))
+                self.url, json={"steps":11}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
-            self.assertEqual(resp.json()["day"]["steps"], "11")
+            self.assertEqual(resp.json()["day"]["steps"], 11)
 
             resp = requests.put(
-                self.url, json={"steps":"22"}, auth=(user, pwd))
+                self.url, json={"steps":22}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.json()["day"]["steps"], "22")
+            self.assertEqual(resp.json()["day"]["steps"], 22)
 
     def test_delete(self):
         for user, pwd in self.users:
             resp = requests.post(
-                self.url, json={"steps":"280"}, auth=(user, pwd))
+                self.url, json={"steps":280}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 201)
-            self.assertEqual(resp.json()["day"]["steps"], "280")
+            self.assertEqual(resp.json()["day"]["steps"], 280)
 
             get_uri = resp.json()["uri"]
             resp = requests.delete(get_uri, auth=(user, pwd))

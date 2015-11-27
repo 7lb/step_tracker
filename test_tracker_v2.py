@@ -37,11 +37,6 @@ class TrackerTester(unittest.TestCase):
         # Qui si testa se un user cerca di modificare i dati relativi a un
         # altro utente
         for auth_user, pwd in self.users:
-
-    def test_bad_auth(self):
-        # Qui si testa se un user cerca di modificare i dati relativi a un
-        # altro utente
-        for auth_user, pwd in self.users:
             for target_user, _ in self.users:
                 if auth_user != target_user:
                     url = self.url.format(target_user)
@@ -93,7 +88,7 @@ class TrackerTester(unittest.TestCase):
             self.assertEqual(resp.json()["day"]["steps"], 11)
 
             resp = requests.put(
-                url, json={"steps":"22"}, auth=(user, pwd))
+                url, json={"steps":22}, auth=(user, pwd))
             self.assertEqual(resp.status_code, 200)
 
     def test_delete(self):
