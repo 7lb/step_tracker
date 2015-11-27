@@ -12,6 +12,7 @@ from flask.ext.httpauth import HTTPBasicAuth
 from functools import wraps
 import os
 import sqlite3
+import sys
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
@@ -232,5 +233,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     DBFILE = args.dbfile or os.getenv("TRACKER_DB")
     if not DBFILE:
-        exit("Please specify a database")
+        sys.exit("Please specify a database")
     app.run()
